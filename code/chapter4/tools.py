@@ -48,6 +48,66 @@ def search(query: str) -> str:
     except Exception as e:
         return f"搜索时发生错误: {e}"
     
+import math
+import operator
+
+def calculator(expression: str) -> str:
+    """
+    一个安全的数学计算器工具。
+    支持加减乘除、括号、幂运算、以及常用数学函数（sqrt、sin、cos 等）。
+    """
+    print(f"🧮 正在执行计算: {expression}")
+    try:
+        # 允许使用的安全命名空间：仅开放 math 模块中的函数和常量
+        safe_globals = {
+            "__builtins__": {},  # 禁止所有内置函数，防止代码注入
+        }
+        safe_locals = {
+            # 基础数学函数
+            "sqrt": math.sqrt,
+            "pow": math.pow,
+            "abs": abs,
+            "round": round,
+            "log": math.log,
+            "log10": math.log10,
+            "log2": math.log2,
+            "exp": math.exp,
+            # 三角函数
+            "sin": math.sin,
+            "cos": math.cos,
+            "tan": math.tan,
+            "asin": math.asin,
+            "acos": math.acos,
+            "atan": math.atan,
+            # 常量
+            "pi": math.pi,
+            "e": math.e,
+            # 取整
+            "floor": math.floor,
+            "ceil": math.ceil,
+        }
+
+        # 对表达式做基本安全检查，拒绝包含危险关键字的输入
+        forbidden_keywords = ["import", "exec", "eval", "open", "os", "sys", "__"]
+        for keyword in forbidden_keywords:
+            if keyword in expression.lower():
+                return f"错误：表达式包含不允许的关键字 '{keyword}'。"
+
+        result = eval(expression, safe_globals, safe_locals)  # noqa: S307
+
+        # 格式化输出：整数结果不显示小数点
+        if isinstance(result, float) and result.is_integer():
+            return f"计算结果：{expression} = {int(result)}"
+        return f"计算结果：{expression} = {result}"
+
+    except ZeroDivisionError:
+        return "错误：除数不能为零。"
+    except SyntaxError:
+        return f"错误：表达式语法有误，请检查 '{expression}'。"
+    except Exception as e:
+        return f"计算时发生错误: {e}"
+
+
 from typing import Dict, Any
 
 class ToolExecutor:
