@@ -1,24 +1,14 @@
 # test_simple_agent.py
-import os
-
-# Cursor 沙箱代理会导致 DeepSeek 请求超时，直连 API
-for _proxy in (
-    "HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
-    "ALL_PROXY", "all_proxy", "SOCKS_PROXY", "SOCKS5_PROXY",
-):
-    os.environ.pop(_proxy, None)
-
 from dotenv import load_dotenv
-from hello_agents import ToolRegistry
+from hello_agents import HelloAgentsLLM, ToolRegistry
 from hello_agents.tools import CalculatorTool
-from my_llm import MyLLM
 from my_simple_agent import MySimpleAgent
 
 # 加载环境变量
 load_dotenv()
 
-# 显式指定 deepseek，避免 .env 中 MODELSCOPE_API_KEY 导致 provider 误识别
-llm = MyLLM(provider="deepseek", timeout=120)
+# 创建LLM实例
+llm = HelloAgentsLLM()
 
 # 测试1：基础对话Agent（无工具）
 print("=== 测试1：基础对话 ===")

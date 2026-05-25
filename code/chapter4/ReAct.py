@@ -1,6 +1,7 @@
 import re
 from llm_client import HelloAgentsLLM
-from tools import ToolExecutor, search, calculator
+from tools import ToolRegistry, SEARCH_SPEC, CALCULATOR_SPEC
+from tool_retriever import TfidfRetriever
 
 # (此处省略 REACT_PROMPT_TEMPLATE 的定义)
 REACT_PROMPT_TEMPLATE = """
@@ -35,12 +36,13 @@ TOOL_FAILURE_HINT_TEMPLATE = """
 """
 
 class ReActAgent:
-    def __init__(self, llm_client: HelloAgentsLLM, tool_executor: ToolExecutor,
-                 max_steps: int = 5, max_failures: int = 3):
+    def __init__(self, llm_client: HelloAgentsLLM, tool_registry: ToolRegistry,
+                 max_steps: int = 5, max_failures: int = 3, retrieve_k: int = 8):
         self.llm_client = llm_client
-        self.tool_executor = tool_executor
+        self.tool_registry = tool_registry
         self.max_steps = max_steps
         self.max_failures = max_failures  # 连续失败次数上限
+        self.retrieve_k = retrieve_k      # 每轮注入 prompt 的工具数量上限
         self.history = []
 
     def run(self, question: str):
@@ -63,7 +65,12 @@ class ReActAgent:
             else:
                 failure_hint = ""  # 正常情况下不注入额外提示
 
-            tools_desc = self.tool_executor.getAvailableTools()
+            # Top-K 工具召回：用"原始问题 + 最近一条思考/观察"作为 query。
+            # 工具总数 <= k 时 retrieve() 会直接返回全量，行为与旧版一致。
+            recent_context = "\n".join(self.history[-2:]) if self.history else ""
+            retrieval_query = f"{question}\n{recent_context}".strip()
+            retrieved_specs = self.tool_registry.retrieve(retrieval_query, k=self.retrieve_k)
+            tools_desc = self.tool_registry.format_for_prompt(retrieved_specs)
             history_str = "\n".join(self.history)
             prompt = REACT_PROMPT_TEMPLATE.format(
                 tools=tools_desc,
@@ -98,12 +105,14 @@ class ReActAgent:
                 continue
 
             print(f"🎬 行动: {tool_name}[{tool_input}]")
-            tool_function = self.tool_executor.getTool(tool_name)
+            tool_function = self.tool_registry.get(tool_name)
 
             # --- 失败情况 2：工具名不存在 ---
             if not tool_function:
                 consecutive_failures += 1
-                failure_reasons.append(f"第{consecutive_failures}次：工具名 '{tool_name}' 不存在，可用工具为：{list(self.tool_executor.tools.keys())}")
+                # 失败提示里给出"召回到的候选工具"而不是全量列表，让 LLM 聚焦相关候选
+                candidates = [s.name for s in retrieved_specs]
+                failure_reasons.append(f"第{consecutive_failures}次：工具名 '{tool_name}' 不存在，本轮候选工具为：{candidates}")
                 print(f"❌ 工具未找到（连续失败 {consecutive_failures} 次）")
                 observation = f"错误：未找到名为 '{tool_name}' 的工具。请从可用工具列表中选择正确的工具名。"
                 self.history.append(f"Action: {action}")
@@ -150,21 +159,13 @@ class ReActAgent:
 
 if __name__ == '__main__':
     llm = HelloAgentsLLM()
-    tool_executor = ToolExecutor()
 
-    # 注册搜索工具
-    search_desc = "一个网页搜索引擎。当你需要回答关于时事、事实以及在你的知识库中找不到的信息时，应使用此工具。"
-    tool_executor.registerTool("Search", search_desc, search)
+    # 用 TfidfRetriever 启用 Top-K 召回；工具数 <= k 时等价于全量注入
+    registry = ToolRegistry(retriever=TfidfRetriever())
+    registry.register(SEARCH_SPEC)
+    registry.register(CALCULATOR_SPEC)
 
-    # 注册计算器工具
-    calculator_desc = (
-        "一个数学计算器。当你需要进行精确的数学计算时使用此工具。"
-        "输入必须是合法的数学表达式，例如：(123 + 456) * 789 / 12。"
-        "支持加(+)、减(-)、乘(*)、除(/)、幂(**)、括号，以及 sqrt、sin、cos、log 等数学函数。"
-    )
-    tool_executor.registerTool("Calculator", calculator_desc, calculator)
-
-    agent = ReActAgent(llm_client=llm, tool_executor=tool_executor)
+    agent = ReActAgent(llm_client=llm, tool_registry=registry)
 
     # 测试计算问题
     question = "计算 (123 + 456) × 789 / 12 = ? 的结果"

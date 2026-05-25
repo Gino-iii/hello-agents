@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import sklearn, numpy; print\\('sklearn', sklearn.__version__\\); print\\('numpy', numpy.__version__\\)\")",
+      "Bash(python3 -c \"import sentence_transformers; print\\(sentence_transformers.__version__\\)\")",
+      "Bash(python3 -c \"import numpy; print\\(numpy.__version__\\)\")",
+      "Bash(python3 tool_retriever.py)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -m py_compile tools.py tool_retriever.py ReAct.py)",
+      "Read(//Users/gino/Library/Caches/**)",
+      "Bash(conda info *)",
+      "Bash(/opt/homebrew/bin/python3 -c \"from dotenv import load_dotenv; from openai import OpenAI; print\\('ok'\\)\")",
+      "Bash(pip3 show *)"
+    ]
+  }
+}
