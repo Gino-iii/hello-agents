@@ -10,7 +10,11 @@
       "Read(//Users/gino/Library/Caches/**)",
       "Bash(conda info *)",
       "Bash(/opt/homebrew/bin/python3 -c \"from dotenv import load_dotenv; from openai import OpenAI; print\\('ok'\\)\")",
-      "Bash(pip3 show *)"
+      "Bash(pip3 show *)",
+      "Bash(pip show *)",
+      "Bash(python -c \"import hello_agents; print\\(hello_agents.__file__\\)\")",
+      "Bash(python -c \"from hello_agents import ReflectionAgent, HelloAgentsLLM, Config, Message; print\\('imports OK'\\)\")",
+      "Bash(./.venv/bin/python -c \"from hello_agents import ReflectionAgent, HelloAgentsLLM, Config, Message; print\\('imports OK'\\)\")"
     ]
   }
 }
