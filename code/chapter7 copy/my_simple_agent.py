@@ -250,3 +250,5 @@ class MySimpleAgent(SimpleAgent):
         if self.tool_registry:
             return self.tool_registry.list_tools()
         return []
+
+    

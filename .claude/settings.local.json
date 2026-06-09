@@ -14,7 +14,10 @@
       "Bash(pip show *)",
       "Bash(python -c \"import hello_agents; print\\(hello_agents.__file__\\)\")",
       "Bash(python -c \"from hello_agents import ReflectionAgent, HelloAgentsLLM, Config, Message; print\\('imports OK'\\)\")",
-      "Bash(./.venv/bin/python -c \"from hello_agents import ReflectionAgent, HelloAgentsLLM, Config, Message; print\\('imports OK'\\)\")"
+      "Bash(./.venv/bin/python -c \"from hello_agents import ReflectionAgent, HelloAgentsLLM, Config, Message; print\\('imports OK'\\)\")",
+      "Bash(echo \"=== search whole D:\\\\\\\\learning for wiki dirs ===\")",
+      "Read(//d/learning/**)",
+      "Bash(cd /d/code/llm-wiki/llm-wiki-4/llm-wiki-0525/ && echo \"=== top structure ===\" && ls -la && echo \"\" && echo \"=== raw/ dir ===\" && ls -la raw/ 2>/dev/null && echo \"\" && echo \"=== count mock load-test files ===\" && find raw/mock-10000-load-test -type f | wc -l && echo \"\" && echo \"=== total size of mock dir ===\" && du -sh raw/mock-10000-load-test 2>/dev/null)"
     ]
   }
 }
